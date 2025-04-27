@@ -1,52 +1,53 @@
 version: 2.1
-jobs:
+jobs: # Daftar tugas (jobs) yang akan dijalankan
+
   lint-dockerfile:
     docker:
-      - image: cimg/base:2024.01
+      - image: cimg/base:2024.01  # Gunakan image dasar (base) CircleCI
     steps:
-      - checkout
+      - checkout                  # Clone source code dari repository
       - run:
-          name: Install Hadolint
+          name: Install Hadolint  # Install Hadolint untuk memeriksa Dockerfile
           command: |
             sudo curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint
             sudo chmod +x /usr/local/bin/hadolint
       - run:
-          name: Lint Dockerfile
+          name: Lint Dockerfile    # Jalankan linting pada Dockerfile
           command: hadolint Dockerfile
 
   test-app:
     docker:
-      - image: cimg/go:1.21
+      - image: cimg/go:1.21        # Gunakan image Go 1.21 
     steps:
-      - checkout
+      - checkout                   # Clone source code dari repository
       - run:
-          name: Run Unit Tests
+          name: Run Unit Tests     # Jalankan unit test untuk aplikasi Go
           command: go test -v -short --count=1 $(go list ./...)
 
-  build-push-image:
+  build-app-karsajobs:
     docker:
-      - image: cimg/base:2024.01
+      - image: cimg/base:2024.01    # Gunakan image dasar CircleCI
     steps:
-      - checkout
-      - setup_remote_docker
+      - checkout                    # Clone source code dari repository
+      - setup_remote_docker         # Setup remote Docker engine untuk build image
       - run:
-          name: Login to GHCR
+          name: Login to GHCR        # Login ke GitHub Container Registry
           command: |
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u $GHCR_USERNAME --password-stdin
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u mmaulidinabdi --password-stdin
       - run:
-          name: Build and Push
+          name: Build and Push       # Build Docker image dan Push ke GHCR
           command: |
-            docker build -t ghcr.io/$GHCR_USERNAME/karsajobs:latest .
-            docker push ghcr.io/$GHCR_USERNAME/karsajobs:latest
+            docker build -t ghcr.io/mmaulidinabdi/karsajobs:latest .
+            docker push ghcr.io/mmaulidinabdi/karsajobs:latest
 
 workflows:
   karsajobs-workflow:
     jobs:
-      - lint-dockerfile
+      - lint-dockerfile             # Job pertama: lint Dockerfile
       - test-app:
           requires:
-            - lint-dockerfile
-      - build-push-image:
+            - lint-dockerfile        # Hanya jalan kalau lint berhasil
+      - build-app-karsajobs:
           requires:
-            - test-app
-          context: ghcr-credentials  # Gunakan context berisi secret
+            - test-app               # Hanya jalan kalau unit test berhasil
+          context: ghcr-credentials  # Menggunakan context untuk variabel rahasia (GHCR_USERNAME dan GHCR_TOKEN)
