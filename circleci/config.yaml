@@ -1,0 +1,40 @@
+version: 2.1
+jobs:
+  lint-dockerfile:
+    docker:
+      - image: cimg/base:2024.01
+    steps:
+      - checkout
+      - run:
+          name: Install Hadolint
+          command: |
+            sudo curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint
+            sudo chmod +x /usr/local/bin/hadolint
+      - run:
+          name: Lint Dockerfile
+          command: hadolint Dockerfile
+
+  build-push-image:
+    docker:
+      - image: cimg/base:2024.01
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Login to GHCR
+          command: |
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u $GHCR_USERNAME --password-stdin
+      - run:
+          name: Build and Push
+          command: |
+            docker build -t ghcr.io/$GHCR_USERNAME/karsajobs-ui:latest .
+            docker push ghcr.io/$GHCR_USERNAME/karsajobs-ui:latest
+
+workflows:
+  karsajobs-ui-workflow:
+    jobs:
+      - lint-dockerfile
+      - build-push-image:
+          requires:
+            - lint-dockerfile
+          context: ghcr-credentials

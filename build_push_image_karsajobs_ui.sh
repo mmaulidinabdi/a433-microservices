@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# build image
+docker build -t ghcr.io/mmaulidinabdi/karsajobs-ui:latest .
+
+#login ke github packages
+echo $GITHUB_TOKEN | docker login ghcr.io -u mmaulidinabdi --password-stdin
+
+#push image ke github packages
+docker push ghcr.io/mmaulidinabdi/karsajobs-ui:latest
