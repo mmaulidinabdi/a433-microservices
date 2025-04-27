@@ -1,40 +1,42 @@
-version: 2.1
-jobs:
-  lint-dockerfile:
+version: 2.1 # Pakai CircleCI config version 2.1
+
+jobs: # Daftar tugas (jobs) yang akan dijalankan
+
+  lint-dockerfile: # Job pertama: linting Dockerfile
     docker:
-      - image: cimg/base:2024.01
+      - image: cimg/base:2024.01 # Pakai base image CircleCI
     steps:
-      - checkout
+      - checkout # Ambil source code dari repo
       - run:
-          name: Install Hadolint
+          name: Install Hadolint # Install hadolint untuk cek Dockerfile
           command: |
             sudo curl -L https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint
             sudo chmod +x /usr/local/bin/hadolint
       - run:
-          name: Lint Dockerfile
+          name: Lint Dockerfile # Jalankan hadolint ke Dockerfile
           command: hadolint Dockerfile
 
-  build-push-image:
+  build-app-karsajobs-ui: # Job kedua: build dan push image karsajobs-ui
     docker:
-      - image: cimg/base:2024.01
+      - image: cimg/base:2024.01 # Pakai base image CircleCI
     steps:
       - checkout
-      - setup_remote_docker
+      - setup_remote_docker # Setup Docker daemon untuk bisa build/push image
       - run:
-          name: Login to GHCR
+          name: Login to GHCR # Login ke GitHub Container Registry (GHCR)
           command: |
-            echo "$GHCR_TOKEN" | docker login ghcr.io -u $GHCR_USERNAME --password-stdin
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u mmaulidinabdi --password-stdin
       - run:
-          name: Build and Push
+          name: Build and Push # Build dan push docker image ke GHCR
           command: |
-            docker build -t ghcr.io/$GHCR_USERNAME/karsajobs-ui:latest .
-            docker push ghcr.io/$GHCR_USERNAME/karsajobs-ui:latest
+            docker build -t ghcr.io/mmaulidinabdi/karsajobs-ui:latest .
+            docker push ghcr.io/mmaulidinabdi/karsajobs-ui:latest 
 
-workflows:
+workflows: # Urutan jalan job
   karsajobs-ui-workflow:
     jobs:
-      - lint-dockerfile
-      - build-push-image:
+      - lint-dockerfile # Pertama lint Dockerfile
+      - build-app-karsajobs-ui:
           requires:
-            - lint-dockerfile
-          context: ghcr-credentials
+            - lint-dockerfile # Build dan push hanya kalau lint sukses
+          context: ghcr-credentials # Pakai context untuk ambil token GHCR

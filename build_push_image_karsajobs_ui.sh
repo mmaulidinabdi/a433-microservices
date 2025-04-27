@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# build image
+# build image di direktori saat ini
 docker build -t ghcr.io/mmaulidinabdi/karsajobs-ui:latest .
 
 #login ke github packages
